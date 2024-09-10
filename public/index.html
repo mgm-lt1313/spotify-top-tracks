@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Spotify Top Tracks</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <h1>Spotify Top Tracks</h1>
+    <button id="loginButton">Sign in with Spotify</button>
+    <div>
+        <div>
+            <button id="allTimeTracksButton">All Time Tracks</button>
+            <button id="lastMonthTracksButton">Last Month Tracks</button>
+            <button id="last6MonthsTracksButton">Last 6 Months Tracks</button>
+        </div>
+    </div>
+    <h2 id="currentRangeTracks">All Time</h2>
+    <div id="topTracks"></div>
+
+    <script>
+        document.getElementById('loginButton').addEventListener('click', () => {
+            window.location = '/login';
+        });
+
+        document.getElementById('allTimeTracksButton').addEventListener('click', () => {
+            const token = getAccessToken();
+            if (token) {
+                fetchTopTracks(token, 'long_term');
+                document.getElementById('currentRangeTracks').innerText = 'All Time';
+            }
+        });
+
+        document.getElementById('lastMonthTracksButton').addEventListener('click', () => {
+            const token = getAccessToken();
+            if (token) {
+                fetchTopTracks(token, 'short_term');
+                document.getElementById('currentRangeTracks').innerText = 'Last Month';
+            }
+        });
+
+        document.getElementById('last6MonthsTracksButton').addEventListener('click', () => {
+            const token = getAccessToken();
+            if (token) {
+                fetchTopTracks(token, 'medium_term');
+                document.getElementById('currentRangeTracks').innerText = 'Last 6 Months';
+            }
+        });
+
+        window.onload = () => {
+            const token = getAccessToken();
+            if (token) {
+                document.getElementById('loginButton').style.display = 'none';
+                fetchTopTracks(token, 'long_term'); // Default to all time
+                document.getElementById('currentRangeTracks').innerText = 'All Time';
+            } else {
+                document.getElementById('loginButton').style.display = 'inline-block';
+            }
+        };
+
+        const getAccessToken = () => {
+            const hash = window.location.hash.substring(1);
+            const params = {};
+            hash.split('&').forEach(param => {
+                let [key, value] = param.split('=');
+                params[key] = decodeURIComponent(value);
+            });
+            return params.access_token || null;
+        };
+
+        const fetchTopTracks = (token, time_range) => {
+            fetch(`/top-tracks?access_token=${token}&time_range=${time_range}`)
+                .then(response => response.json())
+                .then(data => {
+                    const tracks = data.items;
+                    const tracksDiv = document.getElementById('topTracks');
+                    tracksDiv.innerHTML = '';
+                    tracks.forEach((track, index) => {
+                        let trackElement = document.createElement('div');
+                        trackElement.classList.add('track');
+
+                        let rank = document.createElement('div');
+                        rank.classList.add('rank');
+                        rank.innerText = `#${index + 1}`;
+                        trackElement.appendChild(rank);
+
+                        let img = document.createElement('img');
+                        img.src = track.album.images[0].url;
+                        trackElement.appendChild(img);
+
+                        let trackName = document.createElement('div');
+                        trackName.classList.add('track-name');
+                        trackName.innerText = track.name;
+                        trackElement.appendChild(trackName);
+
+                        let artistName = document.createElement('div');
+                        artistName.classList.add('artist-name');
+                        artistName.innerText = track.artists.map(artist => artist.name).join(', ');
+                        trackElement.appendChild(artistName);
+
+                        tracksDiv.appendChild(trackElement);
+                    });
+                });
+        };
+    </script>
+
+</body>
+</html>
